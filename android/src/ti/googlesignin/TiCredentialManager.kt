@@ -1,6 +1,5 @@
 package ti.googlesignin
 
-import android.content.Context
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CredentialManagerCallback
@@ -20,6 +19,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 import org.appcelerator.kroll.KrollDict
 import org.appcelerator.titanium.TiApplication
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_CANCELLED
+import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_CONTEXT_MISSING
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_INTERRUPTED
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_NO_CREDENTIAL
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_TOKEN_PARSING
@@ -29,20 +29,13 @@ import ti.googlesignin.GooglesigninModule.Companion.LOGIN_TYPE_SHEET
 
 object TiCredentialManager {
     lateinit var apiKey: String
-    private lateinit var credentialManager: CredentialManager
-
-    private fun getContext(): Context {
-        return TiApplication.getAppRootOrCurrentActivity()
-    }
-
-    private fun createCredentialManager() {
-        if (::credentialManager.isInitialized.not()) {
-            credentialManager = CredentialManager.create(getContext())
-        }
-    }
 
     fun googleSignIn(module: GooglesigninModule, params: KrollDict?) {
-        createCredentialManager()
+        val context = TiApplication.getAppCurrentActivity()
+        if (context == null) {
+            module.fireLoginEvent(errorType = ERROR_TYPE_CONTEXT_MISSING)
+            return
+        }
 
         val loginType = params?.optString("loginType", LOGIN_TYPE_SHEET) ?: LOGIN_TYPE_SHEET
 
@@ -63,8 +56,8 @@ object TiCredentialManager {
             .addCredentialOption(credentialOption)
             .build()
 
-        credentialManager.getCredentialAsync(
-            context = getContext(),
+        CredentialManager.create(context).getCredentialAsync(
+            context = context,
             request = request,
             cancellationSignal = module.cancellationSignal,
             executor = Runnable::run,
@@ -106,9 +99,13 @@ object TiCredentialManager {
     }
 
     fun signOut(module: GooglesigninModule) {
-        createCredentialManager()
+        val context = TiApplication.getInstance().applicationContext
+        if (context == null) {
+            module.fireLogoutEvent(error = "Application context is missing to call this method.")
+            return
+        }
 
-        credentialManager.clearCredentialStateAsync(
+        CredentialManager.create(context).clearCredentialStateAsync(
             request = ClearCredentialStateRequest(),
             cancellationSignal = null,
             executor = Runnable::run,
