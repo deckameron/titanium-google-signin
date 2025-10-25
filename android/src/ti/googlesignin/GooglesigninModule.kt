@@ -30,6 +30,7 @@ class GooglesigninModule : KrollModule() {
         @Kroll.constant val LOGIN_TYPE_SHEET = "LOGIN_TYPE_SHEET"
 
         @Kroll.constant val ERROR_TYPE_UNKNOWN = "ERROR_TYPE_UNKNOWN"
+        @Kroll.constant val ERROR_TYPE_CONTEXT_MISSING = "ERROR_TYPE_CONTEXT_MISSING"
         @Kroll.constant val ERROR_TYPE_NO_CREDENTIAL = "ERROR_TYPE_NO_CREDENTIAL"
         @Kroll.constant val ERROR_TYPE_TOKEN_PARSING = "ERROR_TYPE_TOKEN_PARSING"
         @Kroll.constant val ERROR_TYPE_INTERRUPTED = "ERROR_TYPE_INTERRUPTED"
