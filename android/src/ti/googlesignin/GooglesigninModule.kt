@@ -35,6 +35,8 @@ class GooglesigninModule : KrollModule() {
         @Kroll.constant val ERROR_TYPE_TOKEN_PARSING = "ERROR_TYPE_TOKEN_PARSING"
         @Kroll.constant val ERROR_TYPE_INTERRUPTED = "ERROR_TYPE_INTERRUPTED"
         @Kroll.constant val ERROR_TYPE_CANCELLED = "ERROR_TYPE_CANCELLED"
+        @Kroll.constant val ERROR_TYPE_CONFIGURATION = "ERROR_TYPE_CONFIGURATION"
+        @Kroll.constant val ERROR_TYPE_UNSUPPORTED = "ERROR_TYPE_UNSUPPORTED"
     }
 
     @method

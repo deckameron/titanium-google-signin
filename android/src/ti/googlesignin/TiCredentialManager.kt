@@ -1,5 +1,6 @@
 package ti.googlesignin
 
+import androidx.core.content.ContextCompat
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CredentialManagerCallback
@@ -10,6 +11,8 @@ import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialInterruptedException
+import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
+import androidx.credentials.exceptions.GetCredentialUnsupportedException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -19,10 +22,13 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 import org.appcelerator.kroll.KrollDict
 import org.appcelerator.titanium.TiApplication
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_CANCELLED
+import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_CONFIGURATION
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_CONTEXT_MISSING
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_INTERRUPTED
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_NO_CREDENTIAL
 import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_TOKEN_PARSING
+import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_UNKNOWN
+import ti.googlesignin.GooglesigninModule.Companion.ERROR_TYPE_UNSUPPORTED
 import ti.googlesignin.GooglesigninModule.Companion.LOGIN_TYPE_DIALOG
 import ti.googlesignin.GooglesigninModule.Companion.LOGIN_TYPE_SHEET
 
@@ -60,7 +66,7 @@ object TiCredentialManager {
             context = context,
             request = request,
             cancellationSignal = module.cancellationSignal,
-            executor = Runnable::run,
+            executor = ContextCompat.getMainExecutor(context),
             callback = object : CredentialManagerCallback<GetCredentialResponse, GetCredentialException> {
                 override fun onError(e: GetCredentialException) {
                     onCredentialError(module, e)
@@ -75,11 +81,12 @@ object TiCredentialManager {
 
     private fun onCredentialError(module: GooglesigninModule, e: Exception) {
         when (e) {
-            // Likely try again with `filterByAuthorizedAccounts: false` if it were `true` previously.
             is NoCredentialException -> module.fireLoginEvent(errorType = ERROR_TYPE_NO_CREDENTIAL, error = e)
             is GetCredentialInterruptedException -> module.fireLoginEvent(errorType = ERROR_TYPE_INTERRUPTED, error = e)
             is GetCredentialCancellationException -> module.fireLoginEvent(cancelled = true, errorType = ERROR_TYPE_CANCELLED, error = e)
-            else -> module.fireLoginEvent()
+            is GetCredentialProviderConfigurationException -> module.fireLoginEvent(errorType = ERROR_TYPE_CONFIGURATION, error = e)
+            is GetCredentialUnsupportedException -> module.fireLoginEvent(errorType = ERROR_TYPE_UNSUPPORTED, error = e)
+            else -> module.fireLoginEvent(errorType = ERROR_TYPE_UNKNOWN, error = e)
         }
     }
 
@@ -108,7 +115,7 @@ object TiCredentialManager {
         CredentialManager.create(context).clearCredentialStateAsync(
             request = ClearCredentialStateRequest(),
             cancellationSignal = null,
-            executor = Runnable::run,
+            executor = ContextCompat.getMainExecutor(context),
             callback = object : CredentialManagerCallback<Void?, ClearCredentialException> {
                 override fun onError(e: ClearCredentialException) {
                     module.fireLogoutEvent(error = e.errorMessage?.toString() ?: "")
